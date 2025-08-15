@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Quiz Widget</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .widget-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 280px;
+            overflow: hidden;
+            margin: 0;
+            height: 430px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .widget-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            flex-shrink: 0;
+        }
+        
+        .widget-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .widget-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .quiz-content {
+            padding: 14px;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .question {
+            display: none;
+            animation: fadeIn 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+            flex: 1;
+            flex-direction: column;
+        }
+        
+        .question.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .question-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        
+        .question-subtitle {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .option {
+            padding: 9px 11px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            font-size: 11px;
+            color: #374151;
+            line-height: 1.3;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .option:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+        
+        .option.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+        
+        .option-text {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .option-desc {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 8px;
+            flex-shrink: 0;
+        }
+        
+        .btn {
+            padding: 7px 11px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background: white;
+            color: #374151;
+        }
+        
+        .btn:hover:not(:disabled) {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        
+        .progress-bar {
+            height: 3px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .results {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .results.active {
+            display: flex;
+        }
+        
+        .results-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        
+        .results-subtitle {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .course-recommendation {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 9px;
+            margin-bottom: 6px;
+            position: relative;
+        }
+        
+        .course-recommendation.rank-1 {
+            border-left: 3px solid #fbbf24;
+        }
+        
+        .course-recommendation.rank-2 {
+            border-left: 3px solid #9ca3af;
+        }
+        
+        .course-recommendation.rank-3 {
+            border-left: 3px solid #f97316;
+        }
+        
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+        
+        .course-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1e40af;
+            line-height: 1.2;
+            flex: 1;
+        }
+        
+        .match-score {
+            background: #3b82f6;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 6px;
+            flex-shrink: 0;
+        }
+        
+        .course-desc {
+            font-size: 10px;
+            color: #64748b;
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+        
+        .course-link {
+            display: inline-block;
+            font-size: 10px;
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .course-link:hover {
+            text-decoration: underline;
+        }
+        
+        .restart-btn {
+            width: 100%;
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+        
+        .intro {
+            text-align: center;
+        }
+        
+        .intro-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 7px;
+        }
+        
+        .intro-desc {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        
+        .start-btn {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        <div class="widget-header">
+            <div class="widget-title">Find your perfect course</div>
+            <div class="widget-subtitle">Quick assessment quiz</div>
+        </div>
+        
+        <div class="quiz-content">
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <!-- Intro -->
+            <div class="intro" id="intro">
+                <div class="intro-title">Course recommendation</div>
+                <div class="intro-desc">Answer 5 quick questions to get personalized course suggestions.</div>
+                <button class="btn btn-primary start-btn" onclick="startQuiz()">Start quiz</button>
+            </div>
+            
+            <!-- Question 1: Role -->
+            <div class="question" id="q1">
+                <div class="question-title">What describes your current role?</div>
+                <div class="question-subtitle">Select all that apply</div>
+                <div class="options">
+                    <div class="option" onclick="toggleOption(this, 1, 'individual')">
+                        <div class="option-text">Individual contributor</div>
+                        <div class="option-desc">Personal productivity and skills</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 1, 'team_lead')">
+                        <div class="option-text">Team lead / Manager</div>
+                        <div class="option-desc">Managing people and projects</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 1, 'executive')">
+                        <div class="option-text">Senior executive</div>
+                        <div class="option-desc">Strategic leadership</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 1, 'entrepreneur')">
+                        <div class="option-text">Entrepreneur / Freelancer</div>
+                        <div class="option-desc">Building business</div>
+                    </div>
+                </div>
+                <div class="navigation">
+                    <button class="btn" onclick="previousQuestion()" disabled>Previous</button>
+                    <button class="btn btn-primary" id="nextBtn1" onclick="nextQuestion()" disabled>Next</button>
+                </div>
+            </div>
+            
+            <!-- Question 2: Challenge -->
+            <div class="question" id="q2">
+                <div class="question-title">What are your biggest challenges?</div>
+                <div class="question-subtitle">Select all areas to improve</div>
+                <div class="options">
+                    <div class="option" onclick="toggleOption(this, 2, 'communication')">
+                        <div class="option-text">Communication & Presentation</div>
+                        <div class="option-desc">Speaking, presenting</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 2, 'productivity')">
+                        <div class="option-text">Time & Productivity</div>
+                        <div class="option-desc">Managing time, focus</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 2, 'leadership')">
+                        <div class="option-text">Leadership & Management</div>
+                        <div class="option-desc">Leading teams effectively</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 2, 'stress')">
+                        <div class="option-text">Stress & Wellbeing</div>
+                        <div class="option-desc">Work-life balance</div>
+                    </div>
+                </div>
+                <div class="navigation">
+                    <button class="btn" onclick="previousQuestion()">Previous</button>
+                    <button class="btn btn-primary" id="nextBtn2" onclick="nextQuestion()" disabled>Next</button>
+                </div>
+            </div>
+            
+            <!-- Question 3: Work Environment -->
+            <div class="question" id="q3">
+                <div class="question-title">What describes your work environment?</div>
+                <div class="question-subtitle">Select all that apply</div>
+                <div class="options">
+                    <div class="option" onclick="toggleOption(this, 3, 'remote')">
+                        <div class="option-text">Fully remote</div>
+                        <div class="option-desc">Working from home</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 3, 'hybrid')">
+                        <div class="option-text">Hybrid work</div>
+                        <div class="option-desc">Mix of office and remote</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 3, 'office')">
+                        <div class="option-text">Traditional office</div>
+                        <div class="option-desc">In-person workplace</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 3, 'international')">
+                        <div class="option-text">International team</div>
+                        <div class="option-desc">Cross-cultural work</div>
+                    </div>
+                </div>
+                <div class="navigation">
+                    <button class="btn" onclick="previousQuestion()">Previous</button>
+                    <button class="btn btn-primary" id="nextBtn3" onclick="nextQuestion()" disabled>Next</button>
+                </div>
+            </div>
+            
+            <!-- Question 4: Learning Goals -->
+            <div class="question" id="q4">
+                <div class="question-title">What are your learning goals?</div>
+                <div class="question-subtitle">Select all areas for development</div>
+                <div class="options">
+                    <div class="option" onclick="toggleOption(this, 4, 'efficiency')">
+                        <div class="option-text">Increase efficiency</div>
+                        <div class="option-desc">Get more done, better focus</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 4, 'communication')">
+                        <div class="option-text">Communication skills</div>
+                        <div class="option-desc">Better presentations</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 4, 'leadership')">
+                        <div class="option-text">Leadership abilities</div>
+                        <div class="option-desc">Lead teams effectively</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 4, 'wellbeing')">
+                        <div class="option-text">Wellbeing & balance</div>
+                        <div class="option-desc">Stress management</div>
+                    </div>
+                </div>
+                <div class="navigation">
+                    <button class="btn" onclick="previousQuestion()">Previous</button>
+                    <button class="btn btn-primary" id="nextBtn4" onclick="nextQuestion()" disabled>Next</button>
+                </div>
+            </div>
+            
+            <!-- Question 5: Current Situation -->
+            <div class="question" id="q5">
+                <div class="question-title">Which situations sound like yours?</div>
+                <div class="question-subtitle">Select all that resonate</div>
+                <div class="options">
+                    <div class="option" onclick="toggleOption(this, 5, 'overwhelmed')">
+                        <div class="option-text">Feel overwhelmed by tasks</div>
+                        <div class="option-desc">Too many priorities</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 5, 'communication')">
+                        <div class="option-text">Struggle with communication</div>
+                        <div class="option-desc">Presentations, team interaction</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 5, 'strategic')">
+                        <div class="option-text">Want to be more strategic</div>
+                        <div class="option-desc">Think like a leader</div>
+                    </div>
+                    <div class="option" onclick="toggleOption(this, 5, 'balance')">
+                        <div class="option-text">Need work-life balance</div>
+                        <div class="option-desc">Managing stress</div>
+                    </div>
+                </div>
+                <div class="navigation">
+                    <button class="btn" onclick="previousQuestion()">Previous</button>
+                    <button class="btn btn-primary" id="nextBtn5" onclick="showResults()" disabled>Get results</button>
+                </div>
+            </div>
+            
+            <!-- Results -->
+            <div class="results" id="results">
+                <div class="results-title">Your top 3 courses</div>
+                <div class="results-subtitle">Based on your answers</div>
+                <div id="recommendations" style="flex: 1; overflow-y: auto; max-height: 240px;"></div>
+                <button class="btn restart-btn" onclick="restartQuiz()">Take quiz again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const courses = {
+            'cross_cultural': {
+                title: 'Cross-cultural communication',
+                description: 'Master communication across diverse backgrounds.',
+                link: 'https://deeplinks.mindtickle.com/3IamqLO1LVb'
+            },
+            'attention_reset': {
+                title: 'Attention reset program',
+                description: 'Stay focused and avoid digital distractions.',
+                link: 'https://deeplinks.mindtickle.com/7CZrzWo2LVb'
+            },
+            'time_management': {
+                title: 'Time management',
+                description: 'Master productivity with proven techniques.',
+                link: 'https://deeplinks.mindtickle.com/UZNFVGq2LVb'
+            },
+            'speaking_easy': {
+                title: 'Speaking is easy',
+                description: 'Overcome fear of public speaking.',
+                link: 'https://deeplinks.mindtickle.com/5OCriDs2LVb'
+            },
+            'project_thinking': {
+                title: 'Project thinking',
+                description: 'Transform chaos into clarity.',
+                link: 'https://deeplinks.mindtickle.com/oAEgYtw2LVb'
+            },
+            'product_thinking': {
+                title: 'Product thinking',
+                description: 'See processes through users\' eyes.',
+                link: 'https://deeplinks.mindtickle.com/kjth4fz2LVb'
+            },
+            'remote_work': {
+                title: 'Remote work',
+                description: 'Master remote work challenges.',
+                link: 'https://deeplinks.mindtickle.com/eTth6SB2LVb'
+            },
+            'stress_management': {
+                title: 'Stress management',
+                description: 'Learn techniques to manage stress.',
+                link: 'https://deeplinks.mindtickle.com/pAx3AoE2LVb'
+            },
+            'emotional_intelligence': {
+                title: 'Emotional intelligence (EQ)',
+                description: 'Develop social awareness and relationship skills.',
+                link: 'https://deeplinks.mindtickle.com/mSOuPsG2LVb'
+            },
+            'learning_science': {
+                title: 'Learning that works',
+                description: 'Science of effective adult learning.',
+                link: 'https://deeplinks.mindtickle.com/CVqNtTk6vUb'
+            }
+        };
+        
+        let currentQuestion = 0;
+        let answers = {};
+        let totalQuestions = 5;
+        
+        function startQuiz() {
+            document.getElementById('intro').style.display = 'none';
+            document.getElementById('progressBar').style.display = 'block';
+            currentQuestion = 1;
+            showQuestion(1);
+            updateProgress();
+        }
+        
+        function showQuestion(questionNum) {
+            // Hide all questions
+            document.querySelectorAll('.question').forEach(q => {
+                q.classList.remove('active');
+            });
+            
+            // Show current question
+            document.getElementById(`q${questionNum}`).classList.add('active');
+            updateNavigation();
+        }
+        
+        function toggleOption(element, questionNum, value) {
+            // Initialize array if doesn't exist
+            if (!answers[questionNum]) {
+                answers[questionNum] = [];
+            }
+            
+            const index = answers[questionNum].indexOf(value);
+            if (index > -1) {
+                // Remove if already selected
+                answers[questionNum].splice(index, 1);
+                element.classList.remove('selected');
+            } else {
+                // Add if not selected (max 3 selections)
+                if (answers[questionNum].length < 3) {
+                    answers[questionNum].push(value);
+                    element.classList.add('selected');
+                }
+            }
+            
+            updateNavigation();
+        }
+        
+        function nextQuestion() {
+            if (currentQuestion < totalQuestions) {
+                currentQuestion++;
+                showQuestion(currentQuestion);
+                updateProgress();
+            }
+        }
+        
+        function previousQuestion() {
+            if (currentQuestion > 1) {
+                currentQuestion--;
+                showQuestion(currentQuestion);
+                updateProgress();
+            }
+        }
+        
+        function updateProgress() {
+            const progress = (currentQuestion / totalQuestions) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+        
+        function updateNavigation() {
+            const nextBtn = document.getElementById(`nextBtn${currentQuestion}`);
+            const hasAnswers = answers[currentQuestion] && answers[currentQuestion].length > 0;
+            if (nextBtn) {
+                nextBtn.disabled = !hasAnswers;
+            }
+        }
+        
+        function calculateRecommendations() {
+            const scores = {};
+            
+            // Initialize all courses with base scores
+            Object.keys(courses).forEach(course => {
+                scores[course] = 0;
+            });
+            
+            // Role-based scoring (Question 1)
+            if (answers[1] && Array.isArray(answers[1])) {
+                answers[1].forEach(role => {
+                    if (role === 'individual') {
+                        scores.time_management += 25;
+                        scores.attention_reset += 25;
+                        scores.speaking_easy += 15;
+                        scores.stress_management += 20;
+                    } else if (role === 'team_lead') {
+                        scores.project_thinking += 25;
+                        scores.emotional_intelligence += 25;
+                        scores.speaking_easy += 20;
+                        scores.cross_cultural += 15;
+                    } else if (role === 'executive') {
+                        scores.emotional_intelligence += 30;
+                        scores.speaking_easy += 25;
+                        scores.project_thinking += 20;
+                        scores.product_thinking += 20;
+                    } else if (role === 'entrepreneur') {
+                        scores.product_thinking += 25;
+                        scores.project_thinking += 25;
+                        scores.time_management += 20;
+                        scores.speaking_easy += 15;
+                    }
+                });
+            }
+            
+            // Challenge-based scoring (Question 2)
+            if (answers[2] && Array.isArray(answers[2])) {
+                answers[2].forEach(challenge => {
+                    if (challenge === 'communication') {
+                        scores.speaking_easy += 30;
+                        scores.cross_cultural += 25;
+                        scores.emotional_intelligence += 20;
+                    } else if (challenge === 'productivity') {
+                        scores.time_management += 30;
+                        scores.attention_reset += 30;
+                        scores.project_thinking += 20;
+                    } else if (challenge === 'leadership') {
+                        scores.emotional_intelligence += 30;
+                        scores.project_thinking += 25;
+                        scores.speaking_easy += 20;
+                    } else if (challenge === 'stress') {
+                        scores.stress_management += 35;
+                        scores.attention_reset += 20;
+                        scores.time_management += 15;
+                    }
+                });
+            }
+            
+            // Environment-based scoring (Question 3)
+            if (answers[3] && Array.isArray(answers[3])) {
+                answers[3].forEach(env => {
+                    if (env === 'remote') {
+                        scores.remote_work += 35;
+                        scores.attention_reset += 20;
+                        scores.time_management += 15;
+                    } else if (env === 'hybrid') {
+                        scores.remote_work += 20;
+                        scores.time_management += 15;
+                        scores.emotional_intelligence += 15;
+                    } else if (env === 'office') {
+                        scores.emotional_intelligence += 20;
+                        scores.speaking_easy += 15;
+                    } else if (env === 'international') {
+                        scores.cross_cultural += 35;
+                        scores.emotional_intelligence += 20;
+                        scores.speaking_easy += 15;
+                    }
+                });
+            }
+            
+            // Goal-based scoring (Question 4)
+            if (answers[4] && Array.isArray(answers[4])) {
+                answers[4].forEach(goal => {
+                    if (goal === 'efficiency') {
+                        scores.time_management += 25;
+                        scores.attention_reset += 25;
+                        scores.project_thinking += 20;
+                    } else if (goal === 'communication') {
+                        scores.speaking_easy += 30;
+                        scores.cross_cultural += 20;
+                        scores.emotional_intelligence += 15;
+                    } else if (goal === 'leadership') {
+                        scores.emotional_intelligence += 30;
+                        scores.project_thinking += 20;
+                        scores.speaking_easy += 15;
+                    } else if (goal === 'wellbeing') {
+                        scores.stress_management += 35;
+                        scores.attention_reset += 20;
+                        scores.remote_work += 15;
+                    }
+                });
+            }
+            
+            // Situation-based scoring (Question 5)
+            if (answers[5] && Array.isArray(answers[5])) {
+                answers[5].forEach(situation => {
+                    if (situation === 'overwhelmed') {
+                        scores.time_management += 30;
+                        scores.attention_reset += 25;
+                        scores.project_thinking += 20;
+                        scores.stress_management += 15;
+                    } else if (situation === 'communication') {
+                        scores.speaking_easy += 30;
+                        scores.cross_cultural += 25;
+                        scores.emotional_intelligence += 20;
+                        scores.remote_work += 10;
+                    } else if (situation === 'strategic') {
+                        scores.product_thinking += 30;
+                        scores.project_thinking += 25;
+                        scores.emotional_intelligence += 20;
+                        scores.learning_science += 15;
+                    } else if (situation === 'balance') {
+                        scores.stress_management += 35;
+                        scores.remote_work += 25;
+                        scores.attention_reset += 15;
+                        scores.time_management += 10;
+                    }
+                });
+            }
+            
+            // Convert to sorted array and get top 3
+            const sortedCourses = Object.entries(scores)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3)
+                .map(([course, score], index) => ({
+                    course,
+                    score: Math.min(100, Math.max(75, score)),
+                    rank: index + 1
+                }));
+            
+            return sortedCourses;
+        }
+        
+        function showResults() {
+            // Hide current question
+            document.querySelectorAll('.question').forEach(q => {
+                q.classList.remove('active');
+            });
+            
+            // Update progress to 100%
+            document.getElementById('progressFill').style.width = '100%';
+            
+            // Calculate and display recommendations
+            const recommendations = calculateRecommendations();
+            const recommendationsDiv = document.getElementById('recommendations');
+            
+            recommendationsDiv.innerHTML = recommendations.map(({course, score, rank}) => {
+                const courseData = courses[course];
+                return `
+                    <div class="course-recommendation rank-${rank}">
+                        <div class="course-header">
+                            <div class="course-title">${courseData.title}</div>
+                            <div class="match-score">${score}%</div>
+                        </div>
+                        <div class="course-desc">${courseData.description}</div>
+                        <a href="${courseData.link}" target="_blank" class="course-link">Start learning →</a>
+                    </div>
+                `;
+            }).join('');
+            
+            // Show results
+            document.getElementById('results').classList.add('active');
+        }
+        
+        function restartQuiz() {
+            // Reset variables
+            currentQuestion = 0;
+            answers = {};
+            
+            // Reset UI
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('progressBar').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('intro').style.display = 'block';
+            
+            // Clear selections
+            document.querySelectorAll('.option').forEach(option => {
+                option.classList.remove('selected');
+            });
+        }
+    </script>
+</body>
+</html>
